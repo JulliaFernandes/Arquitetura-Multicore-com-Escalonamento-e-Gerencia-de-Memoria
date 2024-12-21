@@ -90,32 +90,5 @@ O sistema demonstrou a capacidade de realizar preempção quando o quantum ating
 ✉️ <i>julliacefet@gmail.com</i>
 </a>
 
-<<<<<<< HEAD
-<div>
- <br><p align="justify"> Letícia de Oliveira</p>
- <a href="https://t.me/letolsilva">
- <img align="center" src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white"/> 
- </div>
-<a style="color:black" href="mailto:letolsilva22@gmail.com?subject=[GitHub]%20Source%20Dynamic%20Lists">
-✉️ <i>letolsilva22@gmail.com</i>
-</a>
-
-<div>
- <br><p align="justify"> Lucas Lima de Oliveira</p>
- <a href="https://t.me/oilucaslima">
- <img align="center" src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white"/> 
- </div>
-<a style="color:black" href="mailto:lucaslimadeoliveira80@gmail.com?subject=[GitHub]%20Source%20Dynamic%20Lists">
-✉️ <i>lucaslimadeoliveira80@gmail.com</i>
-</a>
-
-<div>
- <br><p align="justify"> Mariana Rodrigues Lamounier Melo</p>
- <a href="https://t.me/MariRodriguess0">
- <img align="center" src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white"/> 
- </div>
-<a style="color:black" href="mailto:mariana.itapec@gmail.com?subject=[GitHub]%20Source%20Dynamic%20Lists">
-✉️ <i>mariana.itapec@gmail.com</i>
-</a>
 =======
 >>>>>>> b53d264 (update)
