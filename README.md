@@ -34,6 +34,14 @@ A operação `if` é representada pelo símbolo `?`. Por exemplo, `? 0 1 <$` ava
 ### Pólitica de escalonamento  
 Essa metodologia foi desenvolvida para garantir uma simulação realista e eficiente do comportamento de um sistema operacional multicore, permitindo a execução de tarefas concorrentes com controle e gerenciamento de processos.
 
+### Diagrama
+O fluxo do programa foi modelado de maneira a integrar os conceitos apresentados, estruturando a execução e gerência de processos, conforme ilustrado no diagrama a seguir.
+
+<div align="center">
+  <img src="imgs/fluxo.png" width="50%" height="50%">
+  <p align="center"><em> Fluxo da arquitetura </em></p>
+</div>
+
 ## 🎯 Resultados
 
 O sistema demonstrou a capacidade de realizar preempção quando o quantum atingia o valor zero, pausando o processo, retornando-o para a fila, mantendo-o no estado de bloqueado. Posteriormente executando-o novamente até o término do arquivo. Além disso, o uso do mutex foi essencial para não permitir que os processos acessassem a região crítica, que nesta etapa era o acesso ao Core disponível.
