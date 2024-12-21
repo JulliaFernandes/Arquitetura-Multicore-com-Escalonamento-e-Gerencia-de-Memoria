@@ -89,6 +89,3 @@ O sistema demonstrou a capacidade de realizar preempção quando o quantum ating
 <a style="color:black" href="mailto:julliacefet@gmail.com?subject=[GitHub]%20Source%20Dynamic%20Lists">
 ✉️ <i>julliacefet@gmail.com</i>
 </a>
-
-=======
->>>>>>> b53d264 (update)
