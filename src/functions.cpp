@@ -1,95 +1,126 @@
-#include "unidadeControle.hpp"
 #include "functions.hpp"
+#include "escalonador.hpp"
 
-using namespace std;
+int idGlobal = 1;
 
-// Função para inicializar um processo com quantum e timestamp
+void printProcessInfo(const PCB &processo) {
 
-PCB criarProcesso(int ID, ProcessState s, int prioridade, int baseEndereco, int limiteEndereco, int quantumInicial, int timestamp) {
-    PCB novoProcesso(
-        ID,        // ID do processo          
-        s, 
-        prioridade,        // Prioridade do processo
-        baseEndereco,      // Endereço base
-        limiteEndereco,    // Limite de memória
-        quantumInicial = 20 + rand() % 31,     // Quantum inicial
-        timestamp
-    );
-    CLOCK++;
-    return novoProcesso;
+    lock_guard<mutex> lock(printMutex);
+
+    cout << "ID: " << processo.ID << endl;
+    cout << "Nome do Arquivo: " << processo.nome << endl;
+    cout << "Quantum: " << processo.quantum << endl;
+    cout << "Timestamp: " << processo.timestamp << endl;
+    cout << "PC: " << processo.PC << endl;
+    cout << "--------------------------" << endl;
 }
 
-void LerInstrucoesDoArquivo(const string &nomeArquivo, int *registradores){
 
-    // string nomeArquivo = "input.data";
-    ifstream arquivo(nomeArquivo);
-    string linha;
+void criarProcesso(const string &filePath) {
 
-    if (!arquivo.is_open())
-    {
-        cout << "Erro ao abrir o arquivo!" << endl;
+    PCB processo; 
+
+    ifstream file(filePath);
+    if (file.is_open()) {
+       
+        processo.ID = idGlobal++;                   
+        processo.estado = PRONTO;                  
+        processo.prioridade = 1;                   
+        processo.baseEndereco = 0;                 
+        processo.limiteEndereco = 0;               
+       // processo.quantum = 20 + rand() % 31;      
+        processo.quantum = 5;     
+        processo.timestamp = 0 ;    
+        processo.PC = 0;           
+        processo.nome = filePath;       
+        processo.registers = vector <int> (10,0);  
+        processo.numPipeline = 0;         
+
+        // Protege o acesso à fila de prontos
+        {
+            lock_guard<mutex> lock(queueMutex);
+            filaProntos.push(processo); 
+            processosAtuais[processo.ID] = processo;
+            
+        }
+
+        file.close(); 
+    }
+
+    //cout << "\n";
+    printProcessInfo(processo);
+    //cout << "\n";
+}
+
+
+bool verificaQuantum (PCB &processo){
+    
+    if(processo.quantum == 0){
+
+        //cout << "\n>>>>>>> Processo pausado, quantum = " << processo.quantum << "\n";
+
+        processo.estado = PRONTO;
+        processo.quantum = 10;  
+       
+       // cout << "\n>>>>>>>-Novo quantum = " << processo.quantum << "\n\n";
+
+        processo.PC--;
+        lock_guard<mutex> lock(queueMutex);
+
+        filaPCB.push_back(processo);
+
+        //cout << "\n\n\n FILA VERIFICA QUANTUM: " << filaPCB.size() << endl;
+
+        processosAtuais[processo.ID] = processo;
+
+        //  cout << "\n";
+        // printProcessInfo(processo);
+        // cout << "\n";
+        
+        return true;
+    }
+
+    else return false;
+}
+
+void gerarOutputFinal() {
+    ofstream file_OutPut("data/output.txt");
+
+    if (!file_OutPut.is_open()) {
+        cerr << "[ERRO] Não foi possível criar o arquivo de saída.\n";
         return;
     }
 
-    while (getline(arquivo, linha))
+    file_OutPut << "_________________________________________________________________________________________________________________________________________________________________" << endl;
+    file_OutPut << "                                                          PROCESSOS       		               		                            " << endl;
+    file_OutPut << "-----------------------------------------------------------------------------------------------------------------------------------------------------------------" << endl;
+
     {
-        // stringstream ss(linha);
-        UnidadeControle(registradores, linha);
-        cout << "Clock: " << CLOCK << endl;
-    }
+        lock_guard<mutex> processosLock(processosMutex);
 
-    arquivo.close();
-}
+        for (const auto& [id, processo] : processosAtuais) {
+            file_OutPut << "ID: " << id << "\n";
+            file_OutPut << "Nome do Arquivo: " << processo.nome << "\n";
+            file_OutPut << "Estado: " << (processo.estado == PRONTO ? "PRONTO" : "CONCLUIDO") << "\n";
+            file_OutPut << "Quantum: " << processo.quantum << "\n";
+            file_OutPut << "TimeStamp: " << processo.timestamp << endl;
+            file_OutPut << "PC: " << processo.PC << "\n";
+            file_OutPut << "Registros: ";
+            for (int reg : processo.registers) {
+                file_OutPut << reg << " ";
+            }
+            file_OutPut << "\n";
 
-// Simula a execução de um processo em um núcleo
-void executeProcess(PCB &process) {
+            if (memoria.find(id) != memoria.end()) {
+                file_OutPut << "Memória Principal (ID: " << id << "): " << memoria[id] << "\n";
+            } else {
+                file_OutPut << "Memória Principal (ID: " << id << "): Não disponível\n";
+            }
 
-    cout << "Executando processo: " << process.ID << endl;
-    process.estado = RODANDO;
-    
-    // Simula execução reduzindo o quantum
-    while (process.quantum > 0) {
-        this_thread::sleep_for(chrono::milliseconds(500)); // Simula trabalho
-        process.quantum--;
-    }
-
-    // Processo finaliza o quantum e volta para a fila de prontos
-    queueMutex.lock();
-    process.estado = PRONTO;
-    filaProntos.push(process);
-    queueMutex.unlock();
-    cout << "Processo " << process.ID << " preemptado.\n";
-}
-
-
-// Interrompe o processo atual no núcleo e o move para a fila de prontos
-
-void preempt_process(Core &core) {
-    if (core.processoAtual != nullptr) {
-        core.processoAtual->estado = PRONTO;
-
-        // Adiciona o processo interrompido de volta à fila de prontos
-        {
-            lock_guard<mutex> lock(queueMutex);
-            filaProntos.push(*(core.processoAtual));
+            file_OutPut << "====================================================================================================================================================================\n";
         }
-
-        core.processoAtual = nullptr;
-        cout << "Processo preemptado e movido para a fila de prontos." << endl;
     }
+
+    file_OutPut.close();
+    cout << "[INFO] Arquivo de saída 'output.txt' gerado com sucesso.\n";
 }
-
-// Simula um processo bloqueado por solicitação de recurso
-
-void block_process(Core &core) {
-    if (core.processoAtual != nullptr) {
-        core.processoAtual->estado = BLOQUEADO;
-        {
-            lock_guard<mutex> lock(queueMutex);
-            filaBloqueados.push(*(core.processoAtual));
-        }
-        core.processoAtual = nullptr;
-        cout << "Processo bloqueado e movido para a fila de bloqueados." << endl;
-    }
-}
-

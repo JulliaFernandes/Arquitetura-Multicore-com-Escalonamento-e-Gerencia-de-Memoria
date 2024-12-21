@@ -1,103 +1,173 @@
 #include "pipeline.hpp"
 #include "ula.hpp"
-#include <iostream>
-#include <sstream>
-#include <mutex>
+#include "escalonador.hpp"
+#include "functions.hpp"
 
-// Adicionando controle de exclusão mútua global para evitar conflitos
-std::mutex pipelineMutex;
+using namespace std;
 
-void WriteBack(int resultado) {
-    std::cout << "Entrando na WriteBack" << std::endl;
-    std::cout << "Resultado a ser gravado: " << resultado << std::endl;
+mutex pipelineMutex;
+
+void WriteBack(int resultado, PCB &processo) {
+
+    CLOCK++;
+    processo.timestamp++;
+    processo.quantum--;
+    processo.numPipeline = 5; 
+    
+    //cout << "\n################# Resultado gravado: " << resultado << endl;
     
     principal.push_back(resultado);
-    CLOCK++;
-    
-    std::cout << "Saindo da WriteBack, CLOCK: " << CLOCK << std::endl;
+    memoria[processo.ID]= resultado;
 }
 
-void MemoryAccess(int resultado, int *registradores, int info1) {
-    std::cout << "Entrando na MemoryAccess" << std::endl;
-    std::cout << "Resultado da ULA: " << resultado << std::endl;
-    std::cout << "Registradores antes de atualização: " << registradores[info1] << std::endl;
-    
-    std::lock_guard<std::mutex> lock(pipelineMutex); // Bloqueio no nível mais alto
-    std::cout << "Mutex bloqueado na MemoryAccess" << std::endl;
+void MemoryAccess(int resultado, int info1, PCB &processo) {
 
-    registradores[info1] = resultado;
-    std::cout << "Registradores após atualização: " << registradores[info1] << std::endl;
-    std::cout << "Antes de WriteBack" << std::endl;
-    
-    WriteBack(resultado);
+    //cout << "\n------------- Resultado ULA: " << resultado << endl;
 
-    std::cout << "Depois de WriteBack" << std::endl;
+    lock_guard<mutex> lock(pipelineMutex); // é usado para garantir acesso seguro (thread-safe) à seção crítica
+    
+    processo.registers[info1] = resultado;
+
     CLOCK++;
-    std::cout << "Saindo da MemoryAccess, CLOCK: " << CLOCK << std::endl;
+    processo.timestamp++;
+    processo.quantum--;
+    processo.numPipeline = 4;    
+
+    if (verificaQuantum(processo)) {
+        verificaIf = true;
+        processo.estado = BLOQUEADO;
+        processosAtuais[processo.ID] = processo;
+        return;  
+    }
+    WriteBack(resultado, processo);
 }
 
 
-void Execute(char instrucao, int info1, int info2, int info3, std::string info4, int *registradores) {
-    std::cout << "Entrando na Execute" << std::endl;
-    std::cout << "Instrução: " << instrucao << ", info1: " << info1 << ", info2: " << info2 << ", info3: " << info3 << ", info4: " << info4 << std::endl;
+void Execute(char instrucao, int info1, int info2, int info3, string info4, PCB &processo) {
 
     int soma = 0, registradorAtual = info1;
 
     if (instrucao == '=') {
-        std::cout << "Atribuindo " << info2 << " a registrador[" << info1 << "]" << std::endl;
-        registradores[info1] = info2;
+        //cout << "\n Atribuindo " << info2 << " a registrador[" << info1 << "]" << endl;
+        processo.registers[info1] = info2;
+
+        CLOCK++;
+        processo.timestamp++;
+        processo.quantum--;
+        processo.numPipeline = 3;
+
+
     } else if (instrucao == '@') {
-        std::cout << "Somando registradores de " << info1 << " até " << info2 << " por " << info3 << " vezes." << std::endl;
+
         for (int i = 0; i < info3; i++) {
-            soma += registradores[registradorAtual];
+
+            soma += processo.registers[registradorAtual];
             registradorAtual++;
             if (registradorAtual > info2) {
                 registradorAtual = info1;
             }
+            // cout << "Soma: " << soma << endl;
             CLOCK++;
+            processo.timestamp++;
+            processo.quantum--;
+            processo.numPipeline = 3;
+
+            if (verificaQuantum(processo)) {
+                processo.estado = BLOQUEADO;
+                processosAtuais[processo.ID] = processo;
+                verificaIf = true;
+                return;  
+            }
+
         }
-        MemoryAccess(soma, registradores, info1);
+
+        MemoryAccess(soma, info1, processo);
+
     } else if ((instrucao != '&') && (instrucao != '?')) {
-        std::cout << "Calculando ULA com instrução: " << instrucao << std::endl;
-        int resultado = ULA(registradores[info2], registradores[info3], instrucao);
-        MemoryAccess(resultado, registradores, info1);
+
+
+        int resultado = ULA(processo.registers[info2], processo.registers[info3], instrucao);
+
         CLOCK++;
-    } else if (instrucao == '?') {
-        std::cout << "Comparando registradores[" << info1 << "] e registradores[" << info2 << "] com operação: " << info4 << std::endl;
-        std::cout << registradores[info1] << " " << info4 << " " << registradores[info2] << ": ";
-        if (info4 == "<") {
-            std::cout << (registradores[info1] < registradores[info2] ? "True" : "False") << std::endl;
-        } else if (info4 == ">") {
-            std::cout << (registradores[info1] > registradores[info2] ? "True" : "False") << std::endl;
-        } else if (info4 == "=") {
-            std::cout << (registradores[info1] == registradores[info2] ? "True" : "False") << std::endl;
-        } else if (info4 == "!") {
-            std::cout << (registradores[info1] != registradores[info2] ? "True" : "False") << std::endl;
+        processo.timestamp++;
+        processo.quantum--;
+        processo.numPipeline = 3;    
+
+        if (verificaQuantum(processo)) {
+            verificaIf = true;
+            processo.estado = BLOQUEADO;
+            processosAtuais[processo.ID] = processo;
+            return;  
         }
+
+        MemoryAccess(resultado, info1, processo);
+
+
+    } else if (instrucao == '?') {
+
+        // cout << processo.registers[info1] << " " << info4 << " " << processo.registers[info2] << ": ";
+
+        if (info4 == "<") {
+            // cout << (processo.registers[info1] < processo.registers[info2] ? "True" : "False") << endl;
+            // cout << (processo.registers[info1] < processo.registers[info2] ? 1 : 0) << endl;
+            memoria[processo.ID]= (processo.registers[info1] < processo.registers[info2] ? 1 : 0);
+            // cout << "memoria[" << processo.ID << "] = " << memoria[processo.ID] << endl;
+        } else if (info4 == ">") {
+            // cout << (processo.registers[info1] > processo.registers[info2] ? "True" : "False") << endl;
+            // cout << (processo.registers[info1] > processo.registers[info2] ? 1 : 0) << endl;
+            memoria[processo.ID]= (processo.registers[info1] > processo.registers[info2] ? 1 : 0);
+        } else if (info4 == "=") {
+            // cout << (processo.registers[info1] == processo.registers[info2] ? "True" : "False") << endl;
+            // cout << (processo.registers[info1] == processo.registers[info2] ? 1 : 0) << endl;
+            memoria[processo.ID]= (processo.registers[info1] == processo.registers[info2] ? 1 : 0);
+        } else if (info4 == "!") {
+            // cout << (processo.registers[info1] != processo.registers[info2] ? "True" : "False") << endl;
+            // cout << (processo.registers[info1] != processo.registers[info2] ? 1 : 0) << endl;
+            memoria[processo.ID]= (processo.registers[info1] != processo.registers[info2] ? 1 : 0);
+        }
+
+        processo.timestamp++;
+        processo.quantum--;
         CLOCK++;
+        processo.numPipeline = 3;   
+
+        if (verificaQuantum(processo)) {
+            verificaIf=true;
+            processo.estado = BLOQUEADO;
+            processosAtuais[processo.ID] = processo;
+
+            return;  
+        } 
+    }
+}
+
+void InstructionDecode(char instrucao, int info1, int info2, int info3, string info4, PCB &processo) {
+
+    CLOCK++;
+    processo.timestamp++;
+    processo.quantum--;
+    processo.numPipeline = 2;    
+
+    if (verificaQuantum(processo)) {
+        verificaIf=true;
+        processo.estado = BLOQUEADO;
+        processosAtuais[processo.ID] = processo;
+        return;  
     }
 
-    std::cout << "Saindo da Execute" << std::endl;
-    std::cout << "\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa\n";
+    Execute(instrucao, info1, info2, info3, info4, processo);
+    
 }
 
-void InstructionDecode(char instrucao, int info1, int info2, int info3, std::string info4, int *registradores) {
-    std::cout << "Entrando na InstructionDecode" << std::endl;
-    std::cout << "Instrução: " << instrucao << ", info1: " << info1 << ", info2: " << info2 << ", info3: " << info3 << ", info4: " << info4 << std::endl;
-    
-    Execute(instrucao, info1, info2, info3, info4, registradores);
-    
-    std::cout << "Saindo da InstructionDecode" << std::endl;
-    CLOCK++;
-}
-
-
-void InstructionFetch(int *registradores, std::string linha) {
+void InstructionFetch(string linha, PCB &processo) {
+   
     char instrucao;
     int info1 = 0, info2 = 0, info3 = 0;
-    std::string info4;
+    string info4;
 
-    std::stringstream ss(linha);
+    cout << endl;
+
+    stringstream ss(linha);
     ss >> instrucao >> info1;
 
     if (instrucao != '&') {
@@ -110,14 +180,21 @@ void InstructionFetch(int *registradores, std::string linha) {
         ss >> info4;
     }
 
-    std::cout << "Entrando na InstructionFetch" << std::endl;
-    std::cout << "Processando linha: " << linha << std::endl;
-    std::cout << "Instrução: " << instrucao << ", info1: " << info1 << ", info2: " << info2 << ", info3: " << info3 << ", info4: " << info4 << std::endl;
+    //cout << "\n 1- Instrução: " << instrucao << ", info1: " << info1 << ", info2: " << info2 << ", info3: " << info3 << ", info4: " << info4 << endl;
     
-    InstructionDecode(instrucao, info1, info2, info3, info4, registradores);
-
-    std::cout << "Saindo da InstructionFetch" << std::endl;
-    PC++;
+    processo.timestamp++;
+    processo.quantum--;
     CLOCK++;
+
+    if (verificaQuantum(processo)) {
+        verificaIf=true;
+        processo.estado = BLOQUEADO;
+        processosAtuais[processo.ID] = processo;
+        return;  
+    }
+
+    processo.numPipeline = 1;   
+    InstructionDecode(instrucao, info1, info2, info3, info4, processo);
+    
 }
 

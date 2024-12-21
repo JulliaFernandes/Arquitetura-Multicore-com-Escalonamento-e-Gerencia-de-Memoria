@@ -1,30 +1,15 @@
 #ifndef INCLUDE_HPP
 #define INCLUDE_HPP
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <unistd.h>
-#include <unordered_map>
-#include <vector>
-#include <queue>
-#include <mutex>
-#include <pthread.h>
-#include <thread>
-#include <unistd.h>
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <thread>
+#include "bibliotecas.hpp"
 
 #define NUM_PERIFERICOS 5
-#define NUM_THREADS 5
 
 using namespace std;
 
-extern int PC;
+extern int idGlobal;
 extern int CLOCK;
+extern bool verificaIf;
 
 extern unordered_map<int, int> cache;
 extern vector<int> principal;
@@ -32,37 +17,37 @@ extern vector<vector<int>> disco;
 
 extern bool perifericos[NUM_PERIFERICOS];
 
-// Estados dos processos
-enum ProcessState { PRONTO, RODANDO, BLOQUEADO };
+enum ProcessState { PRONTO, RODANDO, BLOQUEADO, CONCLUIDO};
 
 // Process Control Block
-
 struct PCB {
     int ID;
     ProcessState estado;
     int prioridade;
-    int baseEndereco; // Endereço base de memória
-    int limiteEndereco;  // Limite de alocação de memória
+    int baseEndereco;
+    int limiteEndereco;
     int quantum;
     int timestamp;
-    pthread_t threads[NUM_THREADS]; 
+    string nome;
+    int PC;
+    vector<int> registers;
+    short int numPipeline;
 
-    PCB(int id, ProcessState s, int p, int base, int limit, int quantum, int time)
-        : ID(id), estado(s), prioridade(p),
-          baseEndereco(base), limiteEndereco(limit), quantum(quantum), 
-          timestamp(time) {}
+    PCB () : numPipeline(0) {}
+
+    PCB(int id, ProcessState s, int p, int base, int limit, int quantum, int time, string nome, int PC)
+    : ID(id), estado(s), prioridade(p), baseEndereco(base), 
+      limiteEndereco(limit), quantum(quantum), timestamp(time), nome(nome), PC(PC), registers(10, 0) {}
+
 };
-
-struct Core {
-    int id;                 // ID do núcleo
-    PCB* processoAtual; // Processo em execução no núcleo
-};
-
 
 extern queue<PCB> filaProntos;
-extern queue<PCB> filaBloqueados;
 
 extern mutex queueMutex;
+extern mutex printMutex;   
 
+extern map<int, int> memoria;
+extern map<int, PCB> processosAtuais;
+extern std::mutex processosMutex;  
 
 #endif

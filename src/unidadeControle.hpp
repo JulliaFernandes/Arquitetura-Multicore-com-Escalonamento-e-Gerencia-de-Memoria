@@ -1,23 +1,21 @@
 #ifndef UNIDADECONTROLE_HPP
 #define UNIDADECONTROLE_HPP
 
-#include <string>
-#include <vector>
-#include <mutex>
 #include "include.hpp"
+#include "pipeline.hpp" 
 
 class UnidadeControle {
-public:
-    UnidadeControle();
-    UnidadeControle(int *registradores, const std::string &linha); // Novo construtor
-    void processInstruction(const std::string &instruction);
-    UnidadeControle(const std::string &filename);
 
-private:
-    std::vector<int> registers; // Registradores simulados
-    std::mutex regMutex;        // Para sincronização de acesso aos registradores
+    public:
+
+        UnidadeControle();
+
+        // Construtor para tratar arquivos
+        explicit UnidadeControle(PCB &processo);
+
+        void lerAteLinha(ifstream &file, int linhaAlvo);
+        void processarArquivo(PCB &processo);
+
 };
-
-
 
 #endif
