@@ -28,8 +28,8 @@ void criarProcesso(const string &filePath) {
         processo.prioridade = 1;                   
         processo.baseEndereco = 0;                 
         processo.limiteEndereco = 0;               
-       // processo.quantum = 20 + rand() % 31;      
-        processo.quantum = 5;     
+        processo.quantum = 20 + rand() % 31;      
+        // processo.quantum = 5;     
         processo.timestamp = 0 ;    
         processo.PC = 0;           
         processo.nome = filePath;       
@@ -60,7 +60,8 @@ bool verificaQuantum (PCB &processo){
         //cout << "\n>>>>>>> Processo pausado, quantum = " << processo.quantum << "\n";
 
         processo.estado = PRONTO;
-        processo.quantum = 10;  
+        // processo.quantum = 10;  
+        processo.quantum = 20 + rand() % 31; 
        
        // cout << "\n>>>>>>>-Novo quantum = " << processo.quantum << "\n\n";
 
