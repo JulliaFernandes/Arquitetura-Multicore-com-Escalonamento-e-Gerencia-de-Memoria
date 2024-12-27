@@ -55,7 +55,7 @@ O sistema demonstrou a capacidade de realizar preempção quando o quantum ating
 |       | `- 0 1 0`                                      | Subtrair dos R 0 e 1 e armazenar em 0 | 5      |
 | 2     | `= 0 6`                                        | Atribuir 6 ao registrador 0       | 3      |
 |       | `= 1 7`                                        | Atribuir 7 ao registrador 1       | 3      |
-|       | `+ 0 1 0`                                      | Somar dos R 0 e 1 e armazenar em 0... |        |
+|       | `+ 0 1 0`                                      | Somar dos R 0 e 1 e armazenar em 0 |  5      |
 
 
 
