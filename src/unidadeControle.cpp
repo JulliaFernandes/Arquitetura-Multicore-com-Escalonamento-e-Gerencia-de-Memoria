@@ -2,66 +2,90 @@
 #include "pipeline.hpp"
 #include "functions.hpp"
 
+UnidadeControle::UnidadeControle() {}
 
-UnidadeControle::UnidadeControle()  {}
+UnidadeControle::UnidadeControle(PCB &processo)
+{
 
-// Construtor que lê o arquivo e envia cada linha para o pipeline
-UnidadeControle::UnidadeControle(PCB &processo) {
-
-    processo.registers.resize(10, 0); 
+    processo.registers.resize(10, 0);
     processarArquivo(processo);
 }
 
-void UnidadeControle::lerAteLinha(ifstream &file, int linhaAlvo) {
+void UnidadeControle::lerAteLinha(ifstream &file, int linhaAlvo)
+{
     string line;
     int linhaAtual = 0;
 
-    while (linhaAtual < linhaAlvo && getline(file, line)) {
-    
+    while (linhaAtual < linhaAlvo && getline(file, line))
+    {
+
         linhaAtual++;
     }
 
-    if (linhaAtual < linhaAlvo) {
-        //cerr << "Aviso: Arquivo possui apenas " << linhaAtual << " linhas. Continuando do fim." << endl;
+    if (linhaAtual < linhaAlvo)
+    {
+        // cerr << "Aviso: Arquivo possui apenas " << linhaAtual << " linhas. Continuando do fim." << endl;
     }
 }
 
-void UnidadeControle::processarArquivo(PCB &processo) {
-    
-    ifstream file(processo.nome);
+void UnidadeControle::processarArquivo(PCB &processo)
+{
 
-    if (!file.is_open()) {
-        //cerr << "[ERRO] Não foi possível abrir o arquivo: " << processo.nome << endl;
-        return;
-    }
+    if (!verificaFCFS)
+    {
+        ifstream file(processo.nome);
 
-    lerAteLinha(file, processo.PC);
+        if (!file.is_open())
+        {
+            // cerr << "[ERRO] Não foi possível abrir o arquivo: " << processo.nome << endl;
+            return;
+        }
 
-    string line;
-    while (getline(file, line)) {
-      //  cout << "\n----------------- LINE: " << line << endl;
+        lerAteLinha(file, processo.PC);
 
-        processo.PC++; 
-       // cout << "\n\nARQUIVO: " << processo.nome << endl << endl;
-        InstructionFetch(line, processo); 
+        string line;
+        while (getline(file, line))
+        {
 
-            if(verificaIf){
-             
-                verificaIf=false;
+            processo.PC++;
+            // cout << "\n\nARQUIVO: " << processo.nome << endl << endl;
+            InstructionFetch(line, processo);
+
+            if (verificaIf)
+            {
+
+                verificaIf = false;
                 processo.estado = BLOQUEADO;
                 processosAtuais[processo.ID] = processo;
                 break;
             }
+        }
+
+        processo.estado = CONCLUIDO;
+        processosAtuais[processo.ID] = processo;
+        file.close();
     }
+    else
+    {
+        ifstream file(processo.nome);
 
-   // cout << "\n[INFO] Fim do arquivo alcançado. Finalizando processo." << endl<< endl;
+        if (!file.is_open())
+        {
+            // cerr << "[ERRO] Não foi possível abrir o arquivo: " << processo.nome << endl;
+            return;
+        }
 
-    //printProcessInfo(processo); 
-    processo.estado = CONCLUIDO;
-    processosAtuais[processo.ID] = processo;
-    file.close();
+        string line;
 
-   // cout << "\n==================================================================================\n";
+        while (getline(file, line))
+        {
+            processo.PC++;
+            InstructionFetchFCFS(line, processo);
+        }
+
+        processo.estado = CONCLUIDO;
+        processosAtuais[processo.ID] = processo;
+
+        file.close();
+    }
 }
-
-

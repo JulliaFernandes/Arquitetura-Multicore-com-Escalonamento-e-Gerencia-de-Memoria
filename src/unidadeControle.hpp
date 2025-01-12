@@ -2,20 +2,18 @@
 #define UNIDADECONTROLE_HPP
 
 #include "include.hpp"
-#include "pipeline.hpp" 
+#include "pipeline.hpp"
 
-class UnidadeControle {
+class UnidadeControle
+{
 
     public:
-
         UnidadeControle();
-
-        // Construtor para tratar arquivos
         explicit UnidadeControle(PCB &processo);
 
         void lerAteLinha(ifstream &file, int linhaAlvo);
         void processarArquivo(PCB &processo);
-
+        void processarArquivoFCFS(PCB &processo);
 };
 
 #endif

@@ -5,17 +5,21 @@
 #include "include.hpp"
 
 extern deque<PCB> filaPCB;
-class Escalonador {
-    
-    private:
-       
-        CPU cpu;                 
+class Escalonador
+{
 
-    public:
+private:
+    CPU cpu;
+
+public:
+    void adicionarProcesso(PCB processo);
     
-        void adicionarProcesso(PCB processo);
-        void executar();
-        
+    void executarFCFS();
+    void executarMenorJobPrimeiro();
+
+    void executarRoundRobin();
+    void executarPrioridade();
+
 };
 
 #endif
