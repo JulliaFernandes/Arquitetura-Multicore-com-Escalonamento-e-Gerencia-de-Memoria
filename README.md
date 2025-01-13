@@ -1,4 +1,4 @@
-<h1 align="center" font-size="200em"><b>Desenvolvimento e Implementação de uma Arquitetura Multicore com Escalonamento e Gerência de Memória</b></h1>
+<h1 align="center" font-size="200em"><b>Módulo 2: Implementação do Escalonador de Processos</b></h1>
 
 <div align = "center" >
 <!-- imagem -->
@@ -13,7 +13,15 @@ Este é um programa desenvolvido em C++ para a disciplina de Sistemas Operaciona
 
 ## 💻 Objetivo
 
-O presente trabalho tem por objetivo desenvolver um sistema que atua como uma arquitetura multicore, com execução de tarefas preemptivas, proporcionando uma simulação realista do comportamento de um sistema operacional.
+O presente trabalho tem por objetivo desenvolver um escalonador de processos capaz de selecionar quais tarefas serão executadas, dividido em:
+
+1. **Mecanismo de Escalonamento**  
+   Lógica central para seleção e execução, genérica e modular.
+
+2. **Política de Escalonamento**  
+   Regras específicas como FCFS, Round Robin e prioridades, implementadas de forma independente para facilitar substituições e extensões.
+
+O projeto permite simular, testar e comparar políticas, destacando suas vantagens e limitações.
 
 ## 📄 Instruções do Arquivo .data
 
@@ -42,23 +50,33 @@ O fluxo do programa foi modelado de maneira a integrar os conceitos apresentados
   <p align="center"><em> Fluxo da arquitetura </em></p>
 </div>
 
+### Diagrama dos Escalonadores ###
+O fluxo de execução dos escalonadores foi modelado para ilustrar as diferentes estratégias de escalonamento utilizadas. 
+
+<div align="center">
+  <img src="imgs/fluxo2.png" width="50%" height="50%">
+  <p align="center"><em> Fluxo de escalonadores </em></p>
+</div>
+
 ## 🎯 Resultados
 
-O sistema demonstrou a capacidade de realizar preempção quando o quantum atingia o valor zero, pausando o processo, retornando-o para a fila, mantendo-o no estado de bloqueado. Posteriormente executando-o novamente até o término do arquivo. Além disso, o uso do mutex foi essencial para não permitir que os processos acessassem a região crítica, que nesta etapa era o acesso ao Core disponível.
+A escolha do escalonador ideal depende bastante do contexto e das necessidades do sistema. Cada abordagem tem seus pontos fortes e limitações:
 
-#### Exemplo de entrada e saída
+- **FCFS (First Come, First Served)**  
+  É super simples e funciona bem para cargas homogêneas. Mas cuidado: se um processo demorado chegar primeiro, ele pode atrasar tudo e causar longos tempos de espera.
 
-| Input | Instruções                                     | Descrição                       | Ciclos |
-|-------|------------------------------------------------|--------------------------------|--------|
-| 1     | `= 0 4`                                        | Atribuir 4 ao registrador 0       | 3      |
-|       | `= 1 5`                                        | Atribuir 5 ao registrador 1       | 3      |
-|       | `- 0 1 0`                                      | Subtrair dos R 0 e 1 e armazenar em 0 | 5      |
-| 2     | `= 0 6`                                        | Atribuir 6 ao registrador 0       | 3      |
-|       | `= 1 7`                                        | Atribuir 7 ao registrador 1       | 3      |
-|       | `+ 0 1 0`                                      | Somar dos R 0 e 1 e armazenar em 0 |  5      |
+- **SJF (Shortest Job First)**  
+  É ótimo para reduzir o tempo médio de espera, já que prioriza os processos mais curtos. Porém, exige mais esforço, já que é preciso ordenar e conhecer os tempos de execução previamente. Ideal para sistemas com alta variação nos pesos das tarefas.
 
+- **Round Robin (RR)**  
+  Brilha em sistemas multitarefa, garantindo que todo mundo tenha sua vez na CPU. Mas o tamanho do quantum é a chave aqui:  
+  - **Quantum muito curto:** aumenta o overhead.  
+  - **Quantum muito longo:** o RR fica parecido com o FCFS.
 
+- **Escalonador por Prioridade**  
+  É a escolha certa para sistemas críticos, já que coloca as tarefas mais importantes em primeiro lugar. Mas atenção: ele pode deixar processos de baixa prioridade esperando eternamente, a menos que você implemente mecanismos para evitar essa inanição.
 
+Depois de consolidar as tabelas com os tempos de execução de cada escalonador, criamos um gráfico simples em Python. Ele ajuda a visualizar e comparar melhor o desempenho de cada abordagem, deixando claro qual se adapta melhor ao cenário analisado.
 
 
 
