@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
 
 # Dados
 data = {
@@ -10,11 +9,12 @@ data = {
     'P': [1.00209, 3.5026],
 }
 
+# Cores fortes
 colors = {
-    'FCFS': '#a6cee3',  # azul claro
-    'SJF': '#b2df8a',   # verde claro
-    'RR': '#ff9999',    # vermelho claro
-    'P': '#cab2d6'      # roxo claro
+    'FCFS': 'darkblue',
+    'SJF': 'green',
+    'RR': 'red',
+    'P': 'gold',  # amarelo
 }
 
 # Configuração do gráfico
@@ -41,7 +41,7 @@ for scheduler, color in colors.items():
 plt.xlabel('Tamanho da Entrada', fontsize=12)
 plt.ylabel('Tempo de Execução (s)', fontsize=12)
 plt.title('Tamanho da Entrada vs Tempo de Execução (s)', fontsize=14)
-plt.legend(title='Escalonador', fontsize=10)
+plt.legend(title='Escalonador', fontsize=16, title_fontsize=14, loc='upper left', bbox_to_anchor=(0.05, 0.95), borderaxespad=0.5, frameon=True)
 plt.grid(visible=True, linestyle='--', alpha=0.6)
 plt.ylim(0, 6)  # Ajustar a escala para começar antes do 2 e dar espaço para os valores
 
