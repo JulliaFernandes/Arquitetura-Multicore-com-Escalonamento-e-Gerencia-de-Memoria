@@ -6,6 +6,7 @@ void Escalonador::adicionarProcesso(PCB processo)
 {
     filaPCB.push_back(processo);
     filaReserva.push_back(processo);
+
 }
 
 void Escalonador::executarFCFS()
@@ -19,6 +20,8 @@ void Escalonador::executarFCFS()
 
             if (cpu.tentarAtribuirProcesso(processo))
             {
+               // cout << "\n______________________________________________________________________________________________\n";
+               // cout << "\n\tProcesso " << processo.nome << endl;
                 filaPCB.pop_front();
             }
             else
@@ -72,6 +75,7 @@ void Escalonador::executarRoundRobin()
             if (cpu.Mod1tentarAtribuirProcesso(processo))
             {
                 filaPCB.pop_front();
+
             }
             else
             {

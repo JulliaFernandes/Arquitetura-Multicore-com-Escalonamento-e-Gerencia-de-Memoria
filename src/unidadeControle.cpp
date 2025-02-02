@@ -33,6 +33,7 @@ void UnidadeControle::processarArquivo(PCB &processo)
 
     if (!verificaFCFS)
     {
+
         ifstream file(processo.nome);
 
         if (!file.is_open())
@@ -48,7 +49,6 @@ void UnidadeControle::processarArquivo(PCB &processo)
         {
 
             processo.PC++;
-            // cout << "\n\nARQUIVO: " << processo.nome << endl << endl;
             InstructionFetch(line, processo);
 
             if (verificaIf)

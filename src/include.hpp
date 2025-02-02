@@ -11,12 +11,14 @@ extern int idGlobal;
 extern int CLOCK;
 extern bool verificaIf;
 extern bool verificaFCFS;
+extern bool verificaFIFO;
+extern bool similaridadeOkay;
+
 
 extern pair<string, int> infoPrimeiroProcesso;
 extern pair<string, int> infoSegundoProcesso;
 
 extern unordered_map<char, int> hashSimbolos;
-extern unordered_map<int, int> cache;
 
 extern vector<int> principal;
 extern vector<vector<int>> disco;
@@ -67,5 +69,16 @@ extern map<int, int> memoria;
 extern map<int, PCB> processosAtuais;
 extern map<int, PCB> processosAtuaisRR;
 extern std::mutex processosMutex;
+
+extern std::unordered_map<std::string, int> LSH;
+// extern std::unordered_map<std::string, int> FIFO;
+
+extern unordered_map<string, int> cache;
+
+extern list<string> cacheOrder;
+extern size_t CACHE_SIZE;
+// extern mutex cacheMutex;
+extern recursive_mutex cacheMutex;
+extern unordered_set<std::string> chavesEmProcessamento;
 
 #endif
