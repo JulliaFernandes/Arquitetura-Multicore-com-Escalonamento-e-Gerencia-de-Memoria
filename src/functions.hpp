@@ -9,9 +9,11 @@ bool verificaQuantum(PCB &processo);
 void criaHashSimbolos();
 
 void salvarProcessosEmArquivo(string &nomeArquivo);
-// void FCFS(Escalonador &escalonador);
-// void SJF(Escalonador &escalonador);
-// void RoundRobin(Escalonador &escalonador);
-// void Prioridade(Escalonador &escalonador);
+
+void executarEscalonadoresNaoPreemptivosLRU();
+void executarEscalonadoresNaoPreemptivosFIFO();
+
+void executarEscalonadoresPreemptivosLRU();
+void executarEscalonadoresPreemptivosFIFO();
 
 #endif

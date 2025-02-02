@@ -152,7 +152,7 @@ void salvarProcessosEmArquivo(string &nomeArquivo)
     file_OutPut << "_________________________________________________________________________________________________________________________________________________________________\n";
     file_OutPut << "                                                          PROCESSOS       		               		                            \n";
     file_OutPut << "_________________________________________________________________________________________________________________________________________________________________\n";
-    
+
     for (const auto &[id, processo] : processosAtuais)
     {
         file_OutPut << "ID: " << id << "\n";
@@ -187,79 +187,331 @@ void salvarProcessosEmArquivo(string &nomeArquivo)
 
     file_OutPut.close();
 
-    cout << "[INFO] Saída " << nomeArquivo << " gerado com sucesso.\n";
+    cout << "\n[INFO] Saída " << nomeArquivo << " gerado com sucesso.\n";
 }
 
+/////////////////////////////////////// NÃO PREEMPTIVOS ///////////////////////////////////////
 
-// void FCFS(Escalonador &escalonador) {
-//     this_thread::sleep_for(chrono::milliseconds(500));
-//     sleep(1);
-//     auto inicio1 = high_resolution_clock::now(); // Tempo inicial
-//     cout << "\n_________________________________________________________________________________________\n\n";
-//     verificaFCFS = true;
-    
-//     escalonador.executarFCFS();
+void executarEscalonadoresNaoPreemptivosLRU()
+{
+    string filePath = "./data/dicionario.txt";
+    Escalonador escalonador;
+    CPU cpu;
 
-//     string fcfs = "data/FCFSoutput.txt";
-//     salvarProcessosEmArquivo(fcfs);
+    /////////////////////////////////// FCFS ///////////////////////////////////
+    cpu.reiniciar();
 
-//     auto fim1 = high_resolution_clock::now();
-//     auto duracao1 = duration_cast<microseconds>(fim1 - inicio1);
+    carregarDicionario(filePath);
+    cout << "\n\tDICIONÁRIO LSH\n" << endl;
+    exibirDicionario();
+    transferirLSHParaCache();
 
-//     cout << "\nTempo FCFS: " << duracao1.count() / 1e6 << " segundos\n\n";
-// }
+    cout << "\n\tTamanho Cache: " << CACHE_SIZE << " bytes" << std::endl;
+    {
+        lock_guard<mutex> lock(queueMutex);
+        while (!filaProntos.empty())
+        {
+            escalonador.adicionarProcesso(filaProntos.front());
+            filaProntosReserva.push(filaProntos.front());
+            filaProntos.pop();
+        }
+    }
 
-// void SJF(Escalonador &escalonador) {
-//     this_thread::sleep_for(chrono::milliseconds(500));
-//     sleep(1);
-//     auto inicio4 = high_resolution_clock::now();
-//     cout << "_________________________________________________________________________________________\n\n";
-//     verificaFCFS = true;
+    cout << "_________________________________________________________________________________________\n\n";
+    verificaFCFS = true;
+    sleep(1);
 
-//     criaHashSimbolos();
-//     processarInput();
+    auto inicio1 = high_resolution_clock::now(); // Tempo inicial
+
+    escalonador.executarFCFS();
+
+    string fcfs = "data/FCFSoutput.txt";
+    salvarProcessosEmArquivo(fcfs);
+
+    auto fim1 = high_resolution_clock::now();
+    auto duracao1 = duration_cast<microseconds>(fim1 - inicio1);
+
+    cout << "\nTempo FCFS com LRU: " << duracao1.count() / 1e6 << " segundos\n\n";
+
+    exibirCacheOrder();
+
+    /////////////////////////////////// SJF ///////////////////////////////////
+
+    cpu.reiniciar();
+
+    carregarDicionario(filePath);
+    transferirLSHParaCache();
+
+    {
+        lock_guard<mutex> lock(queueMutex);
+        queue<PCB> filaTemporaria = filaProntosReserva;
+        while (!filaTemporaria.empty())
+        {
+            // Adiciona o processo ao escalonador
+            escalonador.adicionarProcesso(filaTemporaria.front());
+            filaTemporaria.pop();
+        }
+    }
 
 
-//     escalonador.executarMenorJobPrimeiro();
+    cout << "_________________________________________________________________________________________\n\n";
+    verificaFCFS = true;
+    sleep(1);
 
-//     string sjf = "data/SJFoutput.txt";
-//     salvarProcessosEmArquivo(sjf);
+    auto inicio4 = high_resolution_clock::now();
 
-//     auto fim4 = high_resolution_clock::now();
-//     auto duracao4 = duration_cast<microseconds>(fim4 - inicio4);
+    criaHashSimbolos();
+    processarInput();
 
-//     cout << "\nTempo Menor Job Primeiro " << duracao4.count() / 1e6 << " segundos\n\n";
-// }
+    escalonador.executarMenorJobPrimeiro();
 
-// void RoundRobin(Escalonador &escalonador){
-//     this_thread::sleep_for(chrono::milliseconds(500));
-//     sleep(1);
-//     auto inicio2 = high_resolution_clock::now(); // Tempo inicial
-//     cout << "_________________________________________________________________________________________\n\n";
+    string sjf = "data/SJFoutput.txt";
+    salvarProcessosEmArquivo(sjf);
 
-//     escalonador.executarRoundRobin();
+    auto fim4 = high_resolution_clock::now();
 
-//     string rr = "data/RRoutput.txt";
-//     salvarProcessosEmArquivo(rr);
+    auto duracao4 = duration_cast<microseconds>(fim4 - inicio4);
+    cout << "\nTempo SJF com LRU: " << duracao4.count() / 1e6 << " segundos\n\n";
 
-//     auto fim2 = high_resolution_clock::now();
-//     auto duracao2 = duration_cast<microseconds>(fim2 - inicio2);
-//     cout << "\nTempo Round Robin: " << duracao2.count() / 1e6 << " segundos\n\n";
-// }
+    exibirCacheOrder();
+}
 
-// void Prioridade(Escalonador &escalonador){
-//     this_thread::sleep_for(chrono::milliseconds(500));
-//     sleep(1);
-//     auto inicio3 = high_resolution_clock::now(); // Tempo inicial
-//     verificaFCFS = true;
-//     cout << "_________________________________________________________________________________________\n\n";
+void executarEscalonadoresNaoPreemptivosFIFO()
+{
+    string filePath = "./data/dicionario.txt";
+    Escalonador escalonador;
+    CPU cpu;
 
-//     escalonador.executarPrioridade();
+    cpu.reiniciar();
 
-//     string p = "data/Poutput.txt";
-//     salvarProcessosEmArquivo(p);
+    {
+        lock_guard<mutex> lock(queueMutex);
+        queue<PCB> filaTemporaria = filaProntosReserva;
+        while (!filaTemporaria.empty())
+        {
+            // Adiciona o processo ao escalonador
+            escalonador.adicionarProcesso(filaTemporaria.front());
+            filaTemporaria.pop();
+        }
+    }
 
-//     auto fim3 = high_resolution_clock::now();
-//     auto duracao3 = duration_cast<microseconds>(fim3 - inicio3);
-//     cout << "\nTempo Prioridade: " << duracao3.count() / 1e6 << " segundos\n\n";
-// }
+    carregarDicionario(filePath);
+    transferirLSHParaCache();
+
+    verificaFCFS = true;
+    verificaFIFO=true;
+    cout << "_________________________________________________________________________________________\n\n";
+    sleep(1);
+
+    auto inicio2 = high_resolution_clock::now(); // Tempo inicial
+
+    escalonador.executarFCFS();
+
+    string fcfs2 = "data/FCFSoutput.txt";
+    salvarProcessosEmArquivo(fcfs2);
+
+    auto fim2 = high_resolution_clock::now();
+    auto duracao2 = duration_cast<microseconds>(fim2 - inicio2);
+
+    cout << "\nTempo FCFS com FIFO: " << duracao2.count() / 1e6 << " segundos\n\n";
+
+    exibirCacheOrder();
+
+    /////////////////////////////////// SJF ///////////////////////////////////
+
+    cpu.reiniciar();
+
+    carregarDicionario(filePath);
+    transferirLSHParaCache();
+
+    {
+        lock_guard<mutex> lock(queueMutex);
+        queue<PCB> filaTemporaria = filaProntosReserva;
+        while (!filaTemporaria.empty())
+        {
+            // Adiciona o processo ao escalonador
+            escalonador.adicionarProcesso(filaTemporaria.front());
+            filaTemporaria.pop();
+        }
+    }
+
+    cout << "_________________________________________________________________________________________\n\n";
+    verificaFIFO = true;
+    sleep(1);
+
+    auto inicio4 = high_resolution_clock::now();
+
+    criaHashSimbolos();
+    processarInput();
+
+    escalonador.executarMenorJobPrimeiro();
+
+    string sjf = "data/SJFoutput.txt";
+
+    salvarProcessosEmArquivo(sjf);
+
+    auto fim4 = high_resolution_clock::now();
+
+    auto duracao4 = duration_cast<microseconds>(fim4 - inicio4);
+    cout << "\nTempo SJF com FIFO: " << duracao4.count() / 1e6 << " segundos\n\n";
+
+    exibirCacheOrder();
+}
+
+/////////////////////////////////////// PREEMPTIVOS ///////////////////////////////////////
+
+void executarEscalonadoresPreemptivosLRU()
+{
+    string filePath = "./data/dicionario.txt";
+    Escalonador escalonador;
+    CPU cpu;
+
+    /////////////////////////////////// ROUNDIN ROBIN ///////////////////////////////////
+    cpu.reiniciar();
+
+    carregarDicionario(filePath);
+    transferirLSHParaCache();
+
+    {
+        lock_guard<mutex> lock(queueMutex);
+        queue<PCB> filaTemporaria = filaProntosReserva;
+        while (!filaTemporaria.empty())
+        {
+            // Adiciona o processo ao escalonador
+            escalonador.adicionarProcesso(filaTemporaria.front());
+            filaTemporaria.pop();
+        }
+    }
+
+    cout << "_________________________________________________________________________________________\n\n";
+    verificaFCFS = false;
+    verificaFIFO = false;
+    sleep(1);
+
+    auto inicio2 = high_resolution_clock::now(); // Tempo inicial
+
+    escalonador.executarRoundRobin();
+
+    string rr = "data/RRoutput.txt";
+    salvarProcessosEmArquivo(rr);
+
+    auto fim2 = high_resolution_clock::now();
+    auto duracao2 = duration_cast<microseconds>(fim2 - inicio2);
+    cout << "\nTempo Round Robin com LRU: " << duracao2.count() / 1e6 << " segundos\n\n";
+
+    exibirCacheOrder();
+
+    /////////////////////////////////// PRIORIDADE ///////////////////////////////////
+
+    cpu.reiniciar();
+
+    carregarDicionario(filePath);
+    transferirLSHParaCache();
+ 
+    {
+        lock_guard<mutex> lock(queueMutex);
+        queue<PCB> filaTemporaria = filaProntosReserva;
+        while (!filaTemporaria.empty())
+        {
+            // Adiciona o processo ao escalonador
+            escalonador.adicionarProcesso(filaTemporaria.front());
+            filaTemporaria.pop();
+        }
+    }
+
+    cout << "_________________________________________________________________________________________\n\n";
+    verificaFCFS = false;
+    verificaFIFO = false;
+    sleep(1);
+
+    auto inicio3 = high_resolution_clock::now(); // Tempo inicial
+
+    escalonador.executarPrioridade();
+
+    string p = "data/Poutput.txt";
+    salvarProcessosEmArquivo(p);
+
+    auto fim3 = high_resolution_clock::now();
+    auto duracao3 = duration_cast<microseconds>(fim3 - inicio3);
+    cout << "\nTempo Prioridade com LRU: " << duracao3.count() / 1e6 << " segundos\n\n";
+
+    exibirCacheOrder();
+}
+
+void executarEscalonadoresPreemptivosFIFO()
+{
+    string filePath = "./data/dicionario.txt";
+    Escalonador escalonador;
+    CPU cpu;
+
+    /////////////////////////////////// ROUNDIN ROBIN ///////////////////////////////////
+    cpu.reiniciar();
+
+    carregarDicionario(filePath);
+    transferirLSHParaCache();
+
+    {
+        lock_guard<mutex> lock(queueMutex);
+        queue<PCB> filaTemporaria = filaProntosReserva;
+        while (!filaTemporaria.empty())
+        {
+            // Adiciona o processo ao escalonador
+            escalonador.adicionarProcesso(filaTemporaria.front());
+            filaTemporaria.pop();
+        }
+    }
+  
+    cout << "_________________________________________________________________________________________\n\n";
+    verificaFCFS = false;
+    verificaFIFO = true;
+    sleep(1);
+
+    auto inicio2 = high_resolution_clock::now(); // Tempo inicial
+
+    escalonador.executarRoundRobin();
+
+    string rr = "data/RRoutput.txt";
+    salvarProcessosEmArquivo(rr);
+
+    auto fim2 = high_resolution_clock::now();
+    auto duracao2 = duration_cast<microseconds>(fim2 - inicio2);
+    cout << "\nTempo Round Robin com FIFO: " << duracao2.count() / 1e6 << " segundos\n\n";
+
+    exibirCacheOrder();
+
+    /////////////////////////////////// PRIORIDADE ///////////////////////////////////
+ 
+    cpu.reiniciar();
+
+    carregarDicionario(filePath);
+    transferirLSHParaCache();
+
+    {
+        lock_guard<mutex> lock(queueMutex);
+        queue<PCB> filaTemporaria = filaProntosReserva;
+        while (!filaTemporaria.empty())
+        {
+            // Adiciona o processo ao escalonador
+            escalonador.adicionarProcesso(filaTemporaria.front());
+            filaTemporaria.pop();
+        }
+    }
+
+    cout << "_________________________________________________________________________________________\n\n";
+    verificaFCFS = false;
+    verificaFIFO = true;
+    sleep(1);
+
+    auto inicio3 = high_resolution_clock::now(); // Tempo inicial
+
+    escalonador.executarPrioridade();
+
+    string p = "data/Poutput.txt";
+    salvarProcessosEmArquivo(p);
+
+    auto fim3 = high_resolution_clock::now();
+    auto duracao3 = duration_cast<microseconds>(fim3 - inicio3);
+    cout << "\nTempo Prioridade com FIFO: " << duracao3.count() / 1e6 << " segundos\n\n";
+
+   exibirCacheOrder();
+}

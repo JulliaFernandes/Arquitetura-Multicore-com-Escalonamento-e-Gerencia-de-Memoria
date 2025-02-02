@@ -1,4 +1,4 @@
-<h1 align="center" font-size="200em"><b>Módulo 2: Implementação do Escalonador de Processos</b></h1>
+<h1 align="center" font-size="200em"><b>Módulo 3: Gerenciamento de Cache e Escalonamento Baseado em Similaridade</b></h1>
 
 <div align = "center" >
 <!-- imagem -->
@@ -13,15 +13,10 @@ Este é um programa desenvolvido em C++ para a disciplina de Sistemas Operaciona
 
 ## 💻 Objetivo
 
-O presente trabalho tem por objetivo desenvolver um escalonador de processos capaz de selecionar quais tarefas serão executadas, dividido em:
+Investigar como o gerenciamento de cache pode influenciar o desempenho na execução de tarefas, abordando a similaridade de processos, implementando técnicas para reaproveitamento de dados armazenados e analisando sua integração nas políticas de escalonamento implementadas.
 
-1. **Mecanismo de Escalonamento**  
-   Lógica central para seleção e execução, genérica e modular.
+O projeto permite simular, testar e comparar o desempenho de duas políticas de cache, LRU e FIFO através do uso da biblioteca LSH, destacando vantagens e limitações.
 
-2. **Política de Escalonamento**  
-   Regras específicas como FCFS, Round Robin e prioridades, implementadas de forma independente para facilitar substituições e extensões.
-
-O projeto permite simular, testar e comparar políticas, destacando suas vantagens e limitações.
 
 ## 📄 Instruções do Arquivo .data
 
@@ -42,7 +37,7 @@ A operação `if` é representada pelo símbolo `?`. Por exemplo, `? 0 1 <$` ava
 ### Pólitica de escalonamento  
 Essa metodologia foi desenvolvida para garantir uma simulação realista e eficiente do comportamento de um sistema operacional multicore, permitindo a execução de tarefas concorrentes com controle e gerenciamento de processos.
 
-### Diagrama
+### Diagrama Arquitetura
 O fluxo do programa foi modelado de maneira a integrar os conceitos apresentados, estruturando a execução e gerência de processos, conforme ilustrado no diagrama a seguir.
 
 <div align="center">
@@ -58,30 +53,17 @@ O fluxo de execução dos escalonadores foi modelado para ilustrar as diferentes
   <p align="center"><em> Fluxo de escalonadores </em></p>
 </div>
 
+### Diagrama do Uso da Memória Cache ###
+O diagrama detalha o fluxo operacional dos algoritmos de cache LRU e FIFO, utilizando a biblioteca LSH para gerenciar o armazenamento em cache.
+
+<div align="center">
+  <img src="imgs/fluxo3.png" width="70%" height="50%">
+  <p align="center"><em> Fluxo memória cache </em></p>
+</div>
+
 ## 🎯 Resultados
 
-A escolha do escalonador ideal depende bastante do contexto e das necessidades do sistema. Cada abordagem tem seus pontos fortes e limitações:
-
-- **FCFS (First Come, First Served)**  
-  É super simples e funciona bem para cargas homogêneas. Mas cuidado: se um processo demorado chegar primeiro, ele pode atrasar tudo e causar longos tempos de espera.
-
-- **SJF (Shortest Job First)**  
-  É ótimo para reduzir o tempo médio de espera, já que prioriza os processos mais curtos. Porém, exige mais esforço, já que é preciso ordenar e conhecer os tempos de execução previamente. Ideal para sistemas com alta variação nos pesos das tarefas.
-
-- **Round Robin (RR)**  
-  Brilha em sistemas multitarefa, garantindo que todo mundo tenha sua vez na CPU. Mas o tamanho do quantum é a chave aqui:  
-  - **Quantum muito curto:** aumenta o overhead.  
-  - **Quantum muito longo:** o RR fica parecido com o FCFS.
-
-- **Escalonador por Prioridade**  
-  É a escolha certa para sistemas críticos, já que coloca as tarefas mais importantes em primeiro lugar. Mas atenção: ele pode deixar processos de baixa prioridade esperando eternamente, a menos que você implemente mecanismos para evitar essa inanição.
-
-Depois de consolidar as tabelas com os tempos de execução de cada escalonador, criamos um gráfico simples em Python. Ele ajuda a visualizar e comparar melhor o desempenho de cada abordagem, deixando claro qual se adapta melhor ao cenário analisado.
-
-
-
-
-
+Com a utilização da cache é possível ver que o sistema mostrou uma boa capacidade de funcionamento, observa-se que quando uma operação realizada por um dos processos já existe na cache, há uma redução de tempo facilitando e agilizando os processos.
 
 
 

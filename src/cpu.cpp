@@ -1,6 +1,4 @@
 #include "cpu.hpp"
-// #include "pipeline.hpp"
-// #include "functions.hpp"
 #include "escalonador.hpp"
 
 int id_processo_passado = 0;
@@ -13,6 +11,9 @@ void CPU::reiniciar()
     id_processo_passado = 0;
     timestamp_antes = 0;
     processosAtuais.clear();
+    LSH.clear();
+    cacheOrder.clear();
+    cache.clear();
 }
 
 CPU::CPU()
@@ -32,7 +33,7 @@ void CPU::executarProcesso(PCB &processo)
 {
     UnidadeControle unidadeControle;
 
-    // cout << "\nExecutando processo no núcleo " << core.id + 1 << " com o arquivo: " << processo.nome << endl;
+    // cout << "\nExecutando processo no núcleo " << " com o arquivo: " << processo.nome << endl;
 
     unidadeControle.processarArquivo(processo);
 
@@ -86,9 +87,6 @@ bool CPU::tentarAtribuirProcesso(PCB &processo)
             if (processoFila.ID != id_processo_passado)
             {
                 processoFila.timestamp += abs(processo_passado.timestamp - timestamp_antes);
-                // cout << "\n\nTimeStamp: " << processoFila.timestamp << endl;
-                // cout << "\n\nProcesso Passado " << processo_passado.timestamp << endl << endl;
-                // processosAtuais[processoFila.ID] = processoFila;
             }
 
             tempQueue.push_back(processoFila);
@@ -123,15 +121,7 @@ bool CPU::tentarAtribuirProcesso(PCB &processo)
             // Cria uma thread para executar o processo
             thread([this, &core, processo]() mutable
                    {
-                // cout << "\n >>>> ESTOU INDO EXECUTAR O PROCESSO: " << processo.nome << endl;
-                // Executa o processo
-                // timestamp_antes = processo.timestamp;
 
-                // executarProcesso(core, processo);
-                // processosAtuais[processo.ID] = processo;
-
-
-                /////////
                 auto timestamp_antes_execucao = processo.timestamp;
 
                // executarProcesso(core, processo);
@@ -145,14 +135,12 @@ bool CPU::tentarAtribuirProcesso(PCB &processo)
                     
                     infoPrimeiroProcesso.first = processo.nome;
                     infoPrimeiroProcesso.second = timestamp_gasto;
-                    //cout << "\n\nENTROU NO VALORPRIMEIROTIMESTAMP: " << "Nome: "<< infoPrimeiroProcesso.first << " ------ " << infoPrimeiroProcesso.second << endl;
                     entraPrimeiraVez++;
                     
                 }
                 else if(entraPrimeiraVez==1){
                     infoSegundoProcesso.first = processo.nome;
                     infoSegundoProcesso.second = timestamp_gasto;
-                    //cout << "\n\nENTROU NO VALORSEGUNDOTIMESTAMP: " << "Nome: "<< infoSegundoProcesso.first << " ------ " << infoSegundoProcesso.second << endl;
                     entraPrimeiraVez++;
                     
                 }
@@ -239,7 +227,7 @@ bool CPU::Mod1tentarAtribuirProcesso(PCB &processo)
 
                 executarProcesso(processo);
                 {
-                    lock_guard<mutex> filaLock(queueMutex);  // Protege o acesso à filaPCB
+                    lock_guard<mutex> filaLock(queueMutex);  
                     id_processo_passado = processo.ID;
                     processo_passado = processo;  
                 }

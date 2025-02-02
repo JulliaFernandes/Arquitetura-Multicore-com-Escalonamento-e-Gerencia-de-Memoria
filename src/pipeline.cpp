@@ -2,6 +2,7 @@
 #include "ula.hpp"
 #include "escalonador.hpp"
 #include "functions.hpp"
+#include "dicionario.hpp"
 
 using namespace std;
 
@@ -15,23 +16,29 @@ void WriteBack(int resultado, PCB &processo)
     processo.quantum--;
     processo.numPipeline = 5;
 
-    // cout << "\n################# Resultado gravado: " << resultado << endl;
+    // cout << "\n[WB] Resultado gravado: " << resultado << endl;
 
     principal.push_back(resultado);
     memoria[processo.ID] = resultado;
 }
 
-void MemoryAccess(int resultado, int info1, PCB &processo)
+void MemoryAccess(int resultado, int info1, PCB &processo, string &informacoes)
 {
 
-    // cout << "\n------------- Resultado ULA: " << resultado << endl;
+    string chave = to_string(processo.registers[info1]);
+
+    if (similaridadeOkay)
+    {
+        atualizarCache(informacoes, resultado);
+    }
+
+    // cout << "\n[MA]  " << endl;
 
     lock_guard<mutex> lock(pipelineMutex);
 
+    processo.registers[info1] = resultado;
+
     CLOCK++;
-    processo.timestamp++;
-    processo.quantum--;
-    processo.numPipeline = 4;
 
     if (verificaQuantum(processo))
     {
@@ -48,6 +55,19 @@ void Execute(char instrucao, int info1, int info2, int info3, string info4, PCB 
 {
 
     int soma = 0, registradorAtual = info1;
+
+    string informacoes;
+
+    informacoes += string(1, instrucao) + " ";
+
+    if (!processo.registers.empty() && processo.registers[info2] != 0)
+        informacoes += to_string(processo.registers[info2]) + " ";
+
+    if (!processo.registers.empty() && processo.registers[info1] != 0)
+        informacoes += to_string(processo.registers[info1]) + " ";
+
+    if (!informacoes.empty() && informacoes.back() == ' ')
+        informacoes.pop_back();
 
     if (instrucao == '=')
     {
@@ -86,7 +106,7 @@ void Execute(char instrucao, int info1, int info2, int info3, string info4, PCB 
             }
         }
 
-        MemoryAccess(soma, info1, processo);
+        MemoryAccess(soma, info1, processo, informacoes);
     }
     else if ((instrucao != '&') && (instrucao != '?'))
     {
@@ -106,7 +126,7 @@ void Execute(char instrucao, int info1, int info2, int info3, string info4, PCB 
             return;
         }
 
-        MemoryAccess(resultado, info1, processo);
+        MemoryAccess(resultado, info1, processo, informacoes);
     }
     else if (instrucao == '?')
     {
@@ -153,8 +173,32 @@ void InstructionDecode(char instrucao, int info1, int info2, int info3, string i
 
     CLOCK++;
     processo.timestamp++;
-    processo.quantum--;
-    processo.numPipeline = 2;
+
+    int resultado = 0;
+    std::string chave = "";
+
+    auto size = processo.registers.size();
+
+    if (static_cast<size_t>(info1) >= size)
+        processo.registers.resize(info1 + 1, 0);
+
+    if (static_cast<size_t>(info2) >= size)
+        processo.registers.resize(info2 + 1, 0);
+
+    if (instrucao == '+' || instrucao == '-' || instrucao == '*' || instrucao == '/')
+    {
+        chave = std::string(1, instrucao) + " " +
+                std::to_string(processo.registers[info2]) + " " +
+                std::to_string(processo.registers[info1]);
+
+        // cout << "[DEBUG] Chave gerada: " << chave << " Resultado: " << resultado << endl;
+        if (verificarCacheComLSH(chave, resultado))
+        {
+            processo.registers[info1] = resultado;
+            // cout << "\n\tValor encontrado na cache: " << resultado << endl;
+            return;
+        }
+    }
 
     if (verificaQuantum(processo))
     {
@@ -174,8 +218,6 @@ void InstructionFetch(string linha, PCB &processo)
     int info1 = 0, info2 = 0, info3 = 0;
     string info4;
 
-    // cout << endl;
-
     stringstream ss(linha);
     ss >> instrucao >> info1;
 
@@ -192,7 +234,7 @@ void InstructionFetch(string linha, PCB &processo)
         ss >> info4;
     }
 
-    // cout << "\n 1- Instrução: " << instrucao << ", info1: " << info1 << ", info2: " << info2 << ", info3: " << info3 << ", info4: " << info4 << endl;
+    // cout << "\n[IF] Instrução: " << instrucao  << ", info1: " << info1 << ", info2: " << info2  << ", info3: " << info3 << ", info4: " << info4 << endl;
 
     processo.timestamp++;
     processo.quantum--;
@@ -214,21 +256,28 @@ void InstructionFetch(string linha, PCB &processo)
 
 void WriteBackFCFS(int resultado, PCB &processo)
 {
-
     CLOCK++;
+
     processo.timestamp++;
+
     processo.numPipeline = 5;
 
-    // cout << "\n################# Resultado gravado: " << resultado << endl;
+    // cout << "\n[WB] Resultado gravado: " << resultado << endl;
 
     principal.push_back(resultado);
     memoria[processo.ID] = resultado;
 }
 
-void MemoryAccessFCFS(int resultado, int info1, PCB &processo)
+void MemoryAccessFCFS(int resultado, int info1, PCB &processo, string &informacoes)
 {
+    string chave = to_string(processo.registers[info1]);
 
-    // cout << "\n------------- Resultado ULA: " << resultado << endl;
+    if (similaridadeOkay)
+    {
+        atualizarCache(informacoes, resultado);
+    }
+
+    //  cout << "\n[MA]  " << endl;
 
     lock_guard<mutex> lock(pipelineMutex);
 
@@ -241,21 +290,31 @@ void MemoryAccessFCFS(int resultado, int info1, PCB &processo)
 
 void ExecuteFCFS(char instrucao, int info1, int info2, int info3, string info4, PCB &processo)
 {
-
     int soma = 0, registradorAtual = info1;
-    // cout << "\n 3- Instrução: " << instrucao << ", info1: " << info1 << ", info2: " << info2 << ", info3: " << info3 << ", info4: " << info4 << endl;
+
+    string informacoes;
+
+    informacoes += string(1, instrucao) + " ";
+
+    if (!processo.registers.empty() && processo.registers[info2] != 0)
+        informacoes += to_string(processo.registers[info2]) + " ";
+
+    if (!processo.registers.empty() && processo.registers[info1] != 0)
+        informacoes += to_string(processo.registers[info1]) + " ";
+
+    if (!informacoes.empty() && informacoes.back() == ' ')
+        informacoes.pop_back();
 
     if (instrucao == '=')
     {
-        // cout << "\n Atribuindo " << info2 << " a registrador[" << info1 << "]" << endl;
-        processo.registers[info1] = info2;
 
+        processo.registers[info1] = info2;
         CLOCK++;
         processo.timestamp++;
     }
     else if (instrucao == '@')
     {
-
+        // Soma valores em registradores
         for (int i = 0; i < info3; i++)
         {
             soma += processo.registers[registradorAtual];
@@ -264,45 +323,38 @@ void ExecuteFCFS(char instrucao, int info1, int info2, int info3, string info4, 
             {
                 registradorAtual = info1;
             }
-            // cout << "Soma: " << soma << endl;
             CLOCK++;
             processo.timestamp++;
         }
 
-        MemoryAccessFCFS(soma, info1, processo);
+        MemoryAccessFCFS(soma, info1, processo, informacoes);
     }
     else if ((instrucao != '&') && (instrucao != '?'))
     {
 
         int resultado = ULA(processo.registers[info2], processo.registers[info3], instrucao);
-
         CLOCK++;
         processo.timestamp++;
-        MemoryAccessFCFS(resultado, info1, processo);
+        MemoryAccessFCFS(resultado, info1, processo, informacoes);
     }
     else if (instrucao == '?')
     {
-
-        // cout << processo.registers[info1] << " " << info4 << " " << processo.registers[info2] << ": ";
+        // Condicional: verifica expressões (>, <, ==, !=)
 
         if (info4 == "<")
         {
-
             memoria[processo.ID] = (processo.registers[info1] < processo.registers[info2] ? 1 : 0);
         }
         else if (info4 == ">")
         {
-
             memoria[processo.ID] = (processo.registers[info1] > processo.registers[info2] ? 1 : 0);
         }
         else if (info4 == "=")
         {
-
             memoria[processo.ID] = (processo.registers[info1] == processo.registers[info2] ? 1 : 0);
         }
         else if (info4 == "!")
         {
-
             memoria[processo.ID] = (processo.registers[info1] != processo.registers[info2] ? 1 : 0);
         }
 
@@ -311,23 +363,53 @@ void ExecuteFCFS(char instrucao, int info1, int info2, int info3, string info4, 
     }
 }
 
-void InstructionDecodeFCFS(char instrucao, int info1, int info2, int info3, string info4, PCB &processo)
+void InstructionDecodeFCFS(char instrucao, int info1, int info2, int info3, std::string info4, PCB &processo)
 {
-    // cout << "\n 2- Instrução: " << instrucao << ", info1: " << info1 << ", info2: " << info2 << ", info3: " << info3 << ", info4: " << info4 << endl;
+    // cout << "\n[Decode]" << endl;
+
     CLOCK++;
     processo.timestamp++;
 
+    int resultado = 0;
+    std::string chave = "";
+
+    auto size = processo.registers.size();
+
+    if (static_cast<size_t>(info1) >= size)
+        processo.registers.resize(info1 + 1, 0);
+
+    if (static_cast<size_t>(info2) >= size)
+        processo.registers.resize(info2 + 1, 0);
+
+    // Geração da chave para operações matemáticas (+, -, *, /)
+    if (instrucao == '+' || instrucao == '-' || instrucao == '*' || instrucao == '/')
+    {
+        chave = std::string(1, instrucao) + " " +
+                std::to_string(processo.registers[info2]) + " " +
+                std::to_string(processo.registers[info1]);
+
+
+        //cout << "[DEBUG] Chave gerada: " << chave << " Resultado: " << resultado << endl;
+
+        // Verifica a cache e o dicionário LSH
+        if (verificarCacheComLSH(chave, resultado))
+        {
+            processo.registers[info1] = resultado;
+           // cout << "\n\tValor encontrado na cache: " << resultado << endl;
+            return;
+        }
+    }
+
+
+    // cout << "[DEBUG] Chave não encontrada. Executando próxima operação..." << endl;
     ExecuteFCFS(instrucao, info1, info2, info3, info4, processo);
 }
 
 void InstructionFetchFCFS(string linha, PCB &processo)
 {
-
     char instrucao;
     int info1 = 0, info2 = 0, info3 = 0;
     string info4;
-
-    // cout << endl;
 
     stringstream ss(linha);
     ss >> instrucao >> info1;
@@ -345,7 +427,7 @@ void InstructionFetchFCFS(string linha, PCB &processo)
         ss >> info4;
     }
 
-    // cout << "\n 1- Instrução: " << instrucao << ", info1: " << info1 << ", info2: " << info2 << ", info3: " << info3 << ", info4: " << info4 << endl;
+    // cout << "\n[IF] Instrução: " << instrucao << ", info1: " << info1 << ", info2: " << info2<< ", info3: " << info3 << ", info4: " << info4 << endl;
 
     processo.timestamp++;
     CLOCK++;

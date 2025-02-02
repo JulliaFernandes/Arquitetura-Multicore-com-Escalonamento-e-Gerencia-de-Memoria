@@ -13,13 +13,12 @@ private:
 
 public:
     void adicionarProcesso(PCB processo);
-    
+
     void executarFCFS();
     void executarMenorJobPrimeiro();
 
     void executarRoundRobin();
     void executarPrioridade();
-
 };
 
 #endif
